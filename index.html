@@ -9,8 +9,20 @@
 </head>
 <body>
 
+<div id="lockScreen" class="lock-screen">
+  <div class="lock-container">
+    <h2>🔒 Bakla si lans</h2>
+    <p>Enter password to access</p>
+    <input type="password" id="lockInput" placeholder="Password..." />
+    <button onclick="checkPassword()">Unlock</button>
+    <div id="lockError" class="lock-error"></div>
+  </div>
+</div>
+
+<div id="mainContent" class="hidden">
+
 <header>
-  <h1>Cleap<span>Transcriber</span></h1>
+  <h1>Cleap<span> </span></h1>
   <p>Powered by Yukari</p>
 </header>
 
@@ -52,6 +64,8 @@
     <div class="transcript-body" id="transcriptBody"></div>
   </div>
 </main>
+
+</div>
 
 <script src="./script.js"></script>
 </body>

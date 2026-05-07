@@ -33,7 +33,7 @@ header {
 header h1 {
   font-family: 'Syne', sans-serif;
   font-weight: 800;
-  font-size: 1.6rem;
+  font-size: 2rem;
   letter-spacing: -0.03em;
 }
 
@@ -189,3 +189,99 @@ button:disabled { background: var(--border); color: var(--muted); cursor: not-al
 .segment .words mark { background: var(--accent); color: #000; padding: 0 2px; border-radius: 2px; }
 
 .key-hint { font-size: 0.68rem; color: var(--muted); }
+
+/* Lock Screen Styles */
+.lock-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(10, 10, 10, 0.95), rgba(10, 10, 10, 0.95)), url('lans.png') center/cover fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.lock-screen.hidden {
+  display: none;
+}
+
+.lock-container {
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  padding: 2rem;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 300px;
+  box-shadow: 0 0 30px rgba(232, 255, 63, 0.2);
+}
+
+.lock-container h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.5rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.lock-container p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.lock-container input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.lock-container input:focus {
+  border-color: var(--accent);
+}
+
+.lock-container button {
+  width: 100%;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  padding: 0.75rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.lock-container button:hover {
+  background: var(--accent-dim);
+}
+
+.lock-container button:active {
+  transform: scale(0.98);
+}
+
+.lock-error {
+  color: #ff6b6b;
+  font-size: 0.75rem;
+  margin-top: 0.75rem;
+  min-height: 1em;
+}
+
+#mainContent {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+#mainContent.hidden {
+  display: none;
+}

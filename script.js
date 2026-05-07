@@ -1,3 +1,25 @@
+// Lock Screen Password
+const LOCK_PASSWORD = "cleap";
+
+function checkPassword() {
+  const input = document.getElementById("lockInput");
+  const error = document.getElementById("lockError");
+  
+  if (input.value === LOCK_PASSWORD) {
+    document.getElementById("lockScreen").classList.add("hidden");
+    document.getElementById("mainContent").classList.remove("hidden");
+    error.textContent = "";
+  } else {
+    error.textContent = "Incorrect password";
+    input.value = "";
+    input.focus();
+  }
+}
+
+document.getElementById("lockInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") checkPassword();
+});
+
 let segments = [];
 let matchIndices = [];
 let currentMatch = -1;
