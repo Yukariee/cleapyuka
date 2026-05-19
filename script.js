@@ -1,21 +1,135 @@
 // ═══════════════════════════════════════════
-//  LOCK SCREEN
+//  LOCK SCREEN — ONE-TIME CODE SYSTEM
 // ═══════════════════════════════════════════
-const LOCK_PASSWORD = "cleap";
 
+// ── CONFIG ──────────────────────────────────
+// Your secret admin password. Only YOU know this.
+// Change this to something only you would guess.
+const ADMIN_PASSWORD = "cleap-admin-2025";
+
+// localStorage key where burned (used) codes are stored
+const LS_USED_CODES = "cleap_used_codes";
+
+// ── HELPERS ─────────────────────────────────
+function getUsedCodes() {
+  try { return JSON.parse(localStorage.getItem(LS_USED_CODES)) || []; }
+  catch { return []; }
+}
+
+function burnCode(code) {
+  const used = getUsedCodes();
+  used.push(code.toUpperCase());
+  localStorage.setItem(LS_USED_CODES, JSON.stringify(used));
+}
+
+function isCodeBurned(code) {
+  return getUsedCodes().includes(code.toUpperCase());
+}
+
+function generateCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars (0,O,1,I)
+  const seg = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return `${seg()}-${seg()}-${seg()}`;
+}
+
+// ── UNLOCK LOGIC ─────────────────────────────
 function checkPassword() {
   const input = document.getElementById("lockInput");
   const error = document.getElementById("lockError");
-  if (input.value === LOCK_PASSWORD) {
-    document.getElementById("lockScreen").classList.add("hidden");
-    document.getElementById("dashboard").classList.remove("hidden");
-    error.textContent = "";
-  } else {
-    error.textContent = "Incorrect password.";
+  const val = input.value.trim().toUpperCase();
+
+  // Check if it's the admin password (lowercase comparison)
+  if (input.value.trim() === ADMIN_PASSWORD) {
+    openAdminPanel();
+    return;
+  }
+
+  // Check if it looks like a one-time code (format: XXXX-XXXX-XXXX)
+  const codePattern = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+  if (!codePattern.test(val)) {
+    error.textContent = "Invalid code format.";
     input.value = "";
     input.focus();
+    return;
+  }
+
+  if (isCodeBurned(val)) {
+    error.textContent = "This code has already been used. Request a new one.";
+    input.value = "";
+    input.focus();
+    return;
+  }
+
+  // Valid unused code — burn it and unlock
+  burnCode(val);
+  unlockDashboard();
+}
+
+function unlockDashboard() {
+  document.getElementById("lockScreen").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+  document.getElementById("lockError").textContent = "";
+}
+
+// ── ADMIN PANEL ──────────────────────────────
+function openAdminPanel() {
+  document.getElementById("lockNormal").classList.add("hidden");
+  document.getElementById("lockAdmin").classList.remove("hidden");
+  renderUsedCodesList();
+}
+
+function closeAdminPanel() {
+  document.getElementById("lockAdmin").classList.add("hidden");
+  document.getElementById("lockNormal").classList.remove("hidden");
+  document.getElementById("lockInput").value = "";
+}
+
+function generateAndShow() {
+  const code = generateCode();
+  const url = `${window.location.origin}${window.location.pathname}?code=${code}`;
+
+  document.getElementById("generatedCode").textContent = code;
+  document.getElementById("generatedLink").value = url;
+  document.getElementById("codeOutput").classList.remove("hidden");
+}
+
+function copyLink() {
+  const link = document.getElementById("generatedLink").value;
+  navigator.clipboard.writeText(link).then(() => {
+    const btn = document.getElementById("copyLinkBtn");
+    btn.textContent = "Copied!";
+    setTimeout(() => btn.textContent = "Copy Link", 1800);
+  });
+}
+
+function renderUsedCodesList() {
+  const used = getUsedCodes();
+  const el = document.getElementById("usedCodesList");
+  if (used.length === 0) {
+    el.innerHTML = `<span class="admin-empty">No codes used yet.</span>`;
+  } else {
+    el.innerHTML = used.map(c => `<span class="admin-code-tag burned">${c}</span>`).join("");
   }
 }
+
+function clearUsedCodes() {
+  if (!confirm("Clear all burned codes? They will become reusable.")) return;
+  localStorage.removeItem(LS_USED_CODES);
+  renderUsedCodesList();
+}
+
+// ── URL CODE AUTO-FILL ───────────────────────
+// If the URL contains ?code=XXXX-XXXX-XXXX, auto-fill the input
+(function autoFillCodeFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  if (code) {
+    const input = document.getElementById("lockInput");
+    input.value = code.toUpperCase();
+    // Give the page a moment to render, then auto-attempt unlock
+    setTimeout(() => checkPassword(), 100);
+  }
+})();
 
 document.getElementById("lockInput").addEventListener("keydown", e => {
   if (e.key === "Enter") checkPassword();
@@ -54,6 +168,92 @@ let matchIndices = [];
 let currentMatch = -1;
 let selectedFile = null;
 
+// ── LocalStorage keys ──
+const LS_API_KEY   = "cleap_groq_key";
+const LS_TRANSCRIPTS = "cleap_transcripts"; // array of {id, name, date, language, segments}
+
+// ── Auto-load saved API key on page load ──
+window.addEventListener("DOMContentLoaded", () => {
+  const saved = localStorage.getItem(LS_API_KEY);
+  if (saved) {
+    document.getElementById("apiKey").value = saved;
+    checkReady();
+  }
+  renderSavedList();
+});
+
+// ── Auto-save API key as user types ──
+document.getElementById("apiKey").addEventListener("input", () => {
+  const val = document.getElementById("apiKey").value.trim();
+  if (val) localStorage.setItem(LS_API_KEY, val);
+  checkReady();
+});
+
+// ── Saved transcript helpers ──
+function getSavedTranscripts() {
+  try { return JSON.parse(localStorage.getItem(LS_TRANSCRIPTS)) || []; }
+  catch { return []; }
+}
+
+function saveTranscript(name, language, segs) {
+  const list = getSavedTranscripts();
+  const entry = {
+    id: Date.now(),
+    name,
+    date: new Date().toLocaleString(),
+    language: language || "",
+    segments: segs,
+  };
+  list.unshift(entry); // newest first
+  localStorage.setItem(LS_TRANSCRIPTS, JSON.stringify(list));
+  renderSavedList();
+}
+
+function deleteSavedTranscript(id) {
+  const list = getSavedTranscripts().filter(e => e.id !== id);
+  localStorage.setItem(LS_TRANSCRIPTS, JSON.stringify(list));
+  renderSavedList();
+}
+
+function loadSavedTranscript(id) {
+  const entry = getSavedTranscripts().find(e => e.id === id);
+  if (!entry) return;
+  segments = entry.segments;
+  document.getElementById("langLabel").textContent = entry.language ? `lang: ${entry.language}` : "";
+  renderTranscript();
+  document.getElementById("searchSection").classList.add("visible");
+  document.getElementById("transcriptSection").classList.add("visible");
+  document.getElementById("status").className = "status";
+  document.getElementById("status").textContent = `✓ Loaded: "${entry.name}"`;
+}
+
+function renderSavedList() {
+  const list = getSavedTranscripts();
+  const container = document.getElementById("savedList");
+  const section = document.getElementById("savedSection");
+  if (!container || !section) return;
+
+  if (list.length === 0) {
+    section.classList.add("hidden");
+    return;
+  }
+  section.classList.remove("hidden");
+  const countEl = document.getElementById("savedCount");
+  if (countEl) countEl.textContent = `${list.length} saved`;
+  container.innerHTML = list.map(e => `
+    <div class="saved-item">
+      <div class="saved-item-info">
+        <span class="saved-item-name">${e.name}</span>
+        <span class="saved-item-date">${e.date} · ${e.segments.length} segments</span>
+      </div>
+      <div class="saved-item-actions">
+        <button class="saved-load-btn" onclick="loadSavedTranscript(${e.id})">Load</button>
+        <button class="saved-del-btn" onclick="deleteSavedTranscript(${e.id})">✕</button>
+      </div>
+    </div>
+  `).join("");
+}
+
 function handleFile(file) {
   if (!file) return;
   selectedFile = file;
@@ -66,8 +266,6 @@ function checkReady() {
   const key = document.getElementById("apiKey").value.trim();
   document.getElementById("transcribeBtn").disabled = !(key && selectedFile);
 }
-
-document.getElementById("apiKey").addEventListener("input", checkReady);
 
 const dropZone = document.getElementById("dropZone");
 dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("dragover"); });
@@ -128,6 +326,9 @@ async function startTranscribe() {
     document.getElementById("transcriptSection").classList.add("visible");
     status.className = "status";
     status.textContent = `✓ ${segments.length} segments transcribed`;
+    // Auto-save to device
+    const saveName = selectedFile ? selectedFile.name : "transcript";
+    saveTranscript(saveName, data.language, segments);
 
   } catch (e) {
     status.className = "status error";

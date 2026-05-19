@@ -11,13 +11,46 @@
 
 <!-- ── LOCK SCREEN ── -->
 <div id="lockScreen" class="lock-screen">
-  <div class="lock-container">
+
+  <!-- NORMAL CLIENT VIEW -->
+  <div class="lock-container" id="lockNormal">
     <div class="lock-logo">Cleap<span>.</span></div>
-    <p class="lock-sub">Enter password to access</p>
-    <input type="password" id="lockInput" placeholder="Password..." />
+    <p class="lock-sub">Enter your access code</p>
+    <input type="text" id="lockInput" placeholder="XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" />
     <button onclick="checkPassword()">Unlock</button>
     <div id="lockError" class="lock-error"></div>
+    <p class="lock-hint">Don't have a code? Contact the site owner.</p>
   </div>
+
+  <!-- ADMIN PANEL (hidden, revealed by admin password) -->
+  <div class="lock-container admin-panel hidden" id="lockAdmin">
+    <div class="lock-logo">Cleap<span>.</span> <span class="admin-badge">Admin</span></div>
+    <p class="lock-sub">One-Time Code Generator</p>
+
+    <button class="admin-generate-btn" onclick="generateAndShow()">⊕ Generate New Code</button>
+
+    <div id="codeOutput" class="code-output hidden">
+      <div class="generated-code-display" id="generatedCode"></div>
+      <p class="code-output-label">Shareable link (send this to your client):</p>
+      <div class="link-row">
+        <input type="text" id="generatedLink" readonly />
+        <button id="copyLinkBtn" onclick="copyLink()">Copy Link</button>
+      </div>
+      <p class="code-output-note">⚠ This code burns after one use. Generate a fresh one for each client.</p>
+    </div>
+
+    <div class="admin-used-section">
+      <div class="admin-used-header">
+        <span>Burned Codes</span>
+        <button class="admin-clear-btn" onclick="clearUsedCodes()">Clear All</button>
+      </div>
+      <div class="admin-used-list" id="usedCodesList"></div>
+    </div>
+
+    <button class="admin-back-btn" onclick="closeAdminPanel()">← Back</button>
+    <button class="admin-enter-btn" onclick="unlockDashboard()">Enter Dashboard →</button>
+  </div>
+
 </div>
 
 <!-- ── DASHBOARD ── -->
@@ -25,7 +58,7 @@
   <header>
     <div class="header-left">
       <h1>Cleap<span>.</span></h1>
-      <p>Powered by Yuka</p>
+      <p>Powered by Groq</p>
     </div>
     <button class="back-btn hidden" id="backBtn" onclick="goHome()">← Back</button>
   </header>
@@ -92,6 +125,15 @@
 
       <button id="transcribeBtn" onclick="startTranscribe()" disabled>Transcribe</button>
       <div class="status" id="status"></div>
+
+      <!-- ── SAVED TRANSCRIPTS ── -->
+      <div id="savedSection" class="saved-section hidden">
+        <div class="saved-header">
+          <span>Saved on this device</span>
+          <span class="saved-count" id="savedCount"></span>
+        </div>
+        <div id="savedList" class="saved-list"></div>
+      </div>
 
       <div class="search-section" id="searchSection">
         <label>Search Transcript</label>
